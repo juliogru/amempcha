@@ -93,7 +93,7 @@ roc.area(as.numeric(as.character(testing$ACTION)), as.numeric(as.character(pred_
 fit4 = train(ACTION ~ .,data = training,
              method = "gbm")
 
-pred_action_4 = predict(fit4, newdata = testing, type = "prob")
+pred_action_4 = predict(fit4, newdata = testing[,-1], type = "prob")
 
 roc.area(as.numeric(as.character(testing$ACTION)), as.numeric(as.character(pred_action_3)))$A
 
