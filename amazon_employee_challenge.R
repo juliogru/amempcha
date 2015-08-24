@@ -49,7 +49,7 @@ mb = 10
 mdepth = 13
 
 # boosting rpart
-Rpart.Boosted <- function(trainX, trainY, testX,
+Rpart.Boosted = function(trainX, trainY, testX,
                           n.trees, shrinkage,
                           bag.fraction, minbucket = 1, maxdepth = 1,
                           func){
