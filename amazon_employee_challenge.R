@@ -120,7 +120,7 @@ for (j in seq(1,n.iterations)) {
   for (i in seq(1,nb.features-1)) {
     for (j in seq(i+1,nb.features)) {
       #cat(paste0(i,"|",j,"\n"))
-      combinedDataX[,k] = paste0(combinedDataX[,i],combinedDataX[,j])
+      combinedDataX[,k] = as.integer(paste0(combinedDataX[,i],combinedDataX[,j]))
       k = k + 1
     }
   }
