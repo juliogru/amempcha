@@ -1,7 +1,7 @@
 library(rpart)
 
-#setwd("D:\\Temp\\amazon-employee-challenge")
-setwd("P:\\Courses\\Kaggle\\amempcha")
+setwd("D:\\Temp\\amempcha")
+#setwd("P:\\Courses\\Kaggle\\amempcha")
 
 # functions
 logistic = function(x){
@@ -39,6 +39,20 @@ testData  = read.csv("test.csv")
 trainDataX = trainData[,2:9]
 testDataX = testData[,2:9]
 trainDataY = trainData$ACTION
+combinedDataX = rbind(trainDataX,testDataX)
+
+# creating higher level features
+nb.features = ncol(combinedDataX)
+k = nb.features + 1
+for (i in seq(1,nb.features-1)) {
+  for (j in seq(i+1,nb.features)) {
+    cat(paste0(i,"|",j,"\n"))
+    combinedDataX[,k] = paste0(combinedDataX[,i],"a",combinedDataX[,j])
+    k = k + 1
+  }
+}
+
+# feature selection
 
 ## Parameters
 n.iterations = 10
