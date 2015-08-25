@@ -1,7 +1,8 @@
 library(rpart)
 
-setwd("D:\\Temp\\amempcha")
-#setwd("P:\\Courses\\Kaggle\\amempcha")
+#setwd("D:\\Temp\\amempcha")
+setwd("P:\\Courses\\Kaggle\\amempcha")
+#setwd("/Users/jinliu/Bertrand/amempcha-master")
 
 # functions
 logistic = function(x){
@@ -36,10 +37,18 @@ reassign_random_values <- function(X, seed){
 # data loading / cleaning
 trainData = read.csv("train.csv")
 testData  = read.csv("test.csv")
-trainDataX = trainData[,2:9]
-testDataX = testData[,2:9]
+trainDataX = trainData[,2:10]
+testDataX = testData[,2:10]
 trainDataY = trainData$ACTION
 combinedDataX = rbind(trainDataX,testDataX)
+
+# show number of factors per variable
+for (i in seq(1,ncol(combinedDataX))) {
+  tmp = sort(table(combinedDataX[,i]),decreasing=TRUE)
+  cat(paste0(colnames(combinedDataX)[i]," : ",length(unique(combinedDataX[,i])),"  >20 : ",length(tmp[tmp > 20]),"\n"))
+}
+  
+  
 
 # creating higher level features
 nb.features = ncol(combinedDataX)
@@ -98,10 +107,25 @@ output.prob = data.frame(matrix(NA,nrow=nrow(testDataX),ncol=n.iterations))
 for (j in seq(1,n.iterations)) {
   cat("iteration #",j," date/time:",date(),"\n")
   seed = j
+  
+  trainDataX = trainData[,2:10]
+  testDataX = testData[,2:10]
   combinedDataX = rbind(trainDataX,testDataX)
   for(idx in 1:ncol(combinedDataX)) {
     combinedDataX[, idx] <- reassign_random_values(combinedDataX[, idx], seed)
   }
+  
+  nb.features = ncol(combinedDataX)
+  k = nb.features + 1
+  for (i in seq(1,nb.features-1)) {
+    for (j in seq(i+1,nb.features)) {
+      #cat(paste0(i,"|",j,"\n"))
+      combinedDataX[,k] = paste0(combinedDataX[,i],combinedDataX[,j])
+      k = k + 1
+    }
+  }
+
+  
   trainDataX = combinedDataX[1:nrow(trainDataX),]
   testDataX  = combinedDataX[-(1:nrow(trainDataX)),]
   
@@ -116,5 +140,5 @@ for (j in seq(1,n.iterations)) {
 
 df = data.frame(Id = testData$id, 
                  Action = rescale(rowMeans(output.prob)))
-write.table(df, file="multi_boosted_rpart3.csv",row.names=FALSE, col.names=TRUE, sep=",")
+write.table(df, file="multi_boosted_rpart5.csv",row.names=FALSE, col.names=TRUE, sep=",")
 
