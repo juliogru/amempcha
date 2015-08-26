@@ -1,7 +1,9 @@
 library(rpart)
+library(foreach)
+library(doParallel)
 
-#setwd("D:\\Temp\\amempcha")
-setwd("P:\\Courses\\Kaggle\\amempcha")
+setwd("D:\\Temp\\amempcha")
+#setwd("P:\\Courses\\Kaggle\\amempcha")
 #setwd("/Users/jinliu/Bertrand/amempcha-master")
 
 # functions
@@ -42,6 +44,9 @@ testDataX = testData[,2:10]
 trainDataY = trainData$ACTION
 combinedDataX = rbind(trainDataX,testDataX)
 
+#test = rpart(trainDataY ~ ., trainDataX, method = "anova")
+#glm(trainDataY ~ ., trainDataX)
+
 # show number of factors per variable
 for (i in seq(1,ncol(combinedDataX))) {
   tmp = sort(table(combinedDataX[,i]),decreasing=TRUE)
@@ -51,21 +56,24 @@ for (i in seq(1,ncol(combinedDataX))) {
   
 
 # creating higher level features
-nb.features = ncol(combinedDataX)
-k = nb.features + 1
-for (i in seq(1,nb.features-1)) {
-  for (j in seq(i+1,nb.features)) {
-    cat(paste0(i,"|",j,"\n"))
-    combinedDataX[,k] = paste0(combinedDataX[,i],"a",combinedDataX[,j])
-    k = k + 1
-  }
-}
+# nb.features = ncol(combinedDataX)
+# k = nb.features + 1
+# for (i in seq(1,nb.features-1)) {
+#   for (j in seq(i+1,nb.features)) {
+#     cat(paste0(i,"|",j,"\n"))
+#     combinedDataX[,k] = paste0(combinedDataX[,i],"a",combinedDataX[,j])
+#     k = k + 1
+#   }
+# }
+# trainDataX = combinedDataX[1:nrow(trainDataX),]
+# testDataX  = combinedDataX[-(1:nrow(trainDataX)),]
+# test = rpart(trainDataY ~ ., trainDataX, method = "anova")
 
 # feature selection
 
 ## Parameters
-n.iterations = 10
-n.trees = 1500
+n.iterations = 3 #10
+n.trees = 10 #1500
 bag.fraction = .8
 shrinkage = .1
 mb = 10
@@ -84,6 +92,7 @@ Rpart.Boosted = function(trainX, trainY, testX,
   sampsize = round(bag.fraction * numData)
   idxTrain = 1:numData
   for(j in seq(1,n.trees)){
+    #cat(paste0("tree #",j,"\n"))
     if(bag.fraction < 1){
       idxTrain = sample(numData, sampsize, replace = FALSE)
     }
@@ -94,6 +103,7 @@ Rpart.Boosted = function(trainX, trainY, testX,
                          xval = 0, maxdepth = maxdepth)
     model.fit = rpart(yy[idxTrain] ~., 
                   trainX[idxTrain,],
+                  method = "anova",
                   control= ctrl)
 
     predictionTrain = predictionTrain + shrinkage * predict(model.fit, trainX)
@@ -102,11 +112,15 @@ Rpart.Boosted = function(trainX, trainY, testX,
   list(training = predictionTrain, testing = predictionTest)
 }
 
+n.threads <- 8
+cl <- makeCluster(n.threads)
+registerDoParallel(cl)
 # Perform Rpart.Boosted several times and aggregate
-output.prob = data.frame(matrix(NA,nrow=nrow(testDataX),ncol=n.iterations))
-for (j in seq(1,n.iterations)) {
+#output.prob = data.frame(matrix(NA,nrow=nrow(testDataX),ncol=n.iterations))
+#for (iterid in seq(1,n.iterations)) {
+output.prob = foreach(iterid = seq(1,n.iterations), .combine = cbind, .packages = c("rpart")) %dopar%{
   cat("iteration #",j," date/time:",date(),"\n")
-  seed = j
+  seed = iterid
   
   trainDataX = trainData[,2:10]
   testDataX = testData[,2:10]
@@ -119,7 +133,6 @@ for (j in seq(1,n.iterations)) {
   k = nb.features + 1
   for (i in seq(1,nb.features-1)) {
     for (j in seq(i+1,nb.features)) {
-      #cat(paste0(i,"|",j,"\n"))
       combinedDataX[,k] = as.integer(paste0(combinedDataX[,i],combinedDataX[,j]))
       k = k + 1
     }
@@ -134,7 +147,8 @@ for (j in seq(1,n.iterations)) {
                           n.trees = n.trees, shrinkage = shrinkage, bag.fraction = bag.fraction, 
                           minbucket = mb, maxdepth = mdepth,
                           func = binary_target)
-  output.prob[,j] = result$testing
+  #output.prob[,iterid] = result$testing
+  result$testing
 }
 
 
