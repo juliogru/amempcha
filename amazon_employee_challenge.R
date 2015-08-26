@@ -72,8 +72,8 @@ for (i in seq(1,ncol(combinedDataX))) {
 # feature selection
 
 ## Parameters
-n.iterations = 3 #10
-n.trees = 10 #1500
+n.iterations = 10
+n.trees = 1500
 bag.fraction = .8
 shrinkage = .1
 mb = 10
